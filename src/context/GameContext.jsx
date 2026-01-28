@@ -28,7 +28,7 @@ const gameReducer = (state, action) => {
 
     case "REMOVE_FAVORITE": {
       const updatedFavorites = state.favorites.filter(
-        (favorite) => favorite.id !== action.payload
+        (fav) => fav.id !== action.payload
       );
       localStorage.setItem("gameFavorites", JSON.stringify(updatedFavorites));
       return { ...state, favorites: updatedFavorites };
@@ -46,7 +46,8 @@ export const GameProvider = ({ children }) => {
     dispatch({ type: "FETCH_GAMES_START" });
 
     try {
-      const response = await fetch("https://www.freetogame.com/api/games");
+      // 🔥 pakai proxy Netlify
+      const response = await fetch("/api/games");
 
       if (!response.ok) {
         throw new Error("Gagal mengambil data game");
