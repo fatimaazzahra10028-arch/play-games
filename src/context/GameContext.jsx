@@ -46,26 +46,16 @@ export const GameProvider = ({ children }) => {
     dispatch({ type: "FETCH_GAMES_START" });
 
     try {
-      const response = await fetch(
-        "https://free-to-play-games-database.p.rapidapi.com/api/games",
-        {
-          method: "GET",
-          headers: {
-            "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY,
-            "x-rapidapi-host":
-              "free-to-play-games-database.p.rapidapi.com",
-          },
-        }
-      );
+      const response = await fetch("https://www.freetogame.com/api/games");
 
       if (!response.ok) {
-        throw new Error("Failed to fetch games");
+        throw new Error("Gagal mengambil data game");
       }
 
       const data = await response.json();
 
       if (!Array.isArray(data)) {
-        throw new Error("Invalid data format");
+        throw new Error("Format data tidak valid");
       }
 
       dispatch({
@@ -116,7 +106,7 @@ export const GameProvider = ({ children }) => {
 export const useGameContext = () => {
   const context = useContext(GameContext);
   if (!context) {
-    throw new Error("useGameContext must be used inside GameProvider");
+    throw new Error("useGameContext harus dipakai di dalam GameProvider");
   }
   return context;
 };
