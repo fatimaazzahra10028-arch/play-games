@@ -5,7 +5,7 @@ const GameContext = createContext();
 const initialState = {
   games: [],
   favorites: JSON.parse(localStorage.getItem("gameFavorites")) || [],
-  loading: true,
+  loading: false,
   error: null,
 };
 
@@ -15,7 +15,7 @@ const gameReducer = (state, action) => {
       return { ...state, loading: true, error: null };
 
     case "FETCH_GAMES_SUCCESS":
-      return { ...state, games: action.payload, loading: false, error: null };
+      return { ...state, games: action.payload, loading: false };
 
     case "FETCH_GAMES_FAIL":
       return { ...state, loading: false, error: action.payload };
@@ -41,41 +41,48 @@ const gameReducer = (state, action) => {
 
 export const GameProvider = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, initialState);
-  console.log("GLOBAL STATE:", state);
 
   const fetchGames = async () => {
-  dispatch({ type: "FETCH_GAMES_START" });
+    dispatch({ type: "FETCH_GAMES_START" });
 
-  try {
-    const response = await fetch("/api/games");
+    try {
+      const response = await fetch(
+        "https://free-to-play-games-database.p.rapidapi.com/api/games",
+        {
+          method: "GET",
+          headers: {
+            "x-rapidapi-key": import.meta.env.VITE_RAPIDAPI_KEY,
+            "x-rapidapi-host":
+              "free-to-play-games-database.p.rapidapi.com",
+          },
+        }
+      );
 
-    if (!response.ok) {
-      throw new Error("API response not ok");
+      if (!response.ok) {
+        throw new Error("Failed to fetch games");
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid data format");
+      }
+
+      dispatch({
+        type: "FETCH_GAMES_SUCCESS",
+        payload: data,
+      });
+    } catch (error) {
+      console.error("Fetch games error:", error);
+      dispatch({
+        type: "FETCH_GAMES_FAIL",
+        payload: error.message,
+      });
     }
-
-    const data = await response.json();
-
-    // 🔍 VALIDASI FORMAT
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid data format");
-    }
-
-    dispatch({
-      type: "FETCH_GAMES_SUCCESS",
-      payload: data,
-    });
-  } catch (error) {
-    console.error("Fetch games error:", error);
-
-    dispatch({
-      type: "FETCH_GAMES_FAIL",
-      payload: error.message || "Failed to fetch games",
-    });
-  }
-};
+  };
 
   const addFavorite = (game) => {
-    if (!state.favorites.some((favorite) => favorite.id === game.id)) {
+    if (!state.favorites.some((fav) => fav.id === game.id)) {
       dispatch({ type: "ADD_FAVORITE", payload: game });
     }
   };
@@ -85,7 +92,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const isFavorite = (id) => {
-    return state.favorites.some((favorite) => favorite.id === id);
+    return state.favorites.some((fav) => fav.id === id);
   };
 
   useEffect(() => {
