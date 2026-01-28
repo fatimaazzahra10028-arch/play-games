@@ -1,1 +1,4 @@
-/*  /index.html  200
+/api/games https://www.freetogame.com/api/games 200
+/api/game  https://www.freetogame.com/api/game 200
+
+/* /index.html 200
