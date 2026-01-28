@@ -41,6 +41,7 @@ const gameReducer = (state, action) => {
 
 export const GameProvider = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, initialState);
+  console.log("GLOBAL STATE:", state);
 
   const fetchGames = async () => {
   dispatch({ type: "FETCH_GAMES_START" });
@@ -112,5 +113,3 @@ export const useGameContext = () => {
   }
   return context;
 };
- 
-console.log("STATE:", state);
