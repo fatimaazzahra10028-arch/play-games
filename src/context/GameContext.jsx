@@ -15,7 +15,7 @@ const gameReducer = (state, action) => {
       return { ...state, loading: true, error: null };
 
     case "FETCH_GAMES_SUCCESS":
-      return { ...state, games: action.payload, loading: false };
+      return { ...state, games: action.payload, loading: false, error: null };
 
     case "FETCH_GAMES_FAIL":
       return { ...state, loading: false, error: action.payload };
@@ -43,21 +43,35 @@ export const GameProvider = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
   const fetchGames = async () => {
-    dispatch({ type: "FETCH_GAMES_START" });
+  dispatch({ type: "FETCH_GAMES_START" });
 
-    try {
-      //  IMPORTANT: use Vite proxy
-      const response = await fetch('/api/games');
-      const data = await response.json();
+  try {
+    const response = await fetch("/api/games");
 
-      dispatch({ type: "FETCH_GAMES_SUCCESS", payload: data });
-    } catch (error) {
-      dispatch({
-        type: "FETCH_GAMES_FAIL",
-        payload: error.message || "Failed to fetch games",
-      });
+    if (!response.ok) {
+      throw new Error("API response not ok");
     }
-  };
+
+    const data = await response.json();
+
+    // 🔍 VALIDASI FORMAT
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid data format");
+    }
+
+    dispatch({
+      type: "FETCH_GAMES_SUCCESS",
+      payload: data,
+    });
+  } catch (error) {
+    console.error("Fetch games error:", error);
+
+    dispatch({
+      type: "FETCH_GAMES_FAIL",
+      payload: error.message || "Failed to fetch games",
+    });
+  }
+};
 
   const addFavorite = (game) => {
     if (!state.favorites.some((favorite) => favorite.id === game.id)) {
@@ -98,3 +112,5 @@ export const useGameContext = () => {
   }
   return context;
 };
+ 
+console.log("STATE:", state);
