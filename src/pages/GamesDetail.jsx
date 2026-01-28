@@ -13,7 +13,7 @@ function GamesDetail() {
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        const response = await fetch(`https://www.freetogame.com/api/game?id=${id}`);
+        const response = await fetch(`/api/game?id=${id}`);
         const data = await response.json();
         setGame(data);
       } catch (error) {
