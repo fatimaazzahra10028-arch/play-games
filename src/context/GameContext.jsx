@@ -47,7 +47,7 @@ export const GameProvider = ({ children }) => {
 
     try {
       //  IMPORTANT: use Vite proxy
-      const response = await fetch("/freetogame/api/games");
+      const response = await fetch('https://www.freetogame.com/api/games');
       const data = await response.json();
 
       dispatch({ type: "FETCH_GAMES_SUCCESS", payload: data });

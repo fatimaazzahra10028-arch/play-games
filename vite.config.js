@@ -3,19 +3,9 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  base: '/', // 🔥 PENTING
   plugins: [
     react(),
     tailwindcss(),
   ],
-  server: {
-    proxy: {
-      '/freetogame': {
-        target: 'https://www.freetogame.com',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) =>
-          path.replace(/^\/freetogame/, ''),
-      },
-    },
-  },
 })
