@@ -1,0 +1,5 @@
+[[redirects]]
+from = "/api/api/*"
+to = "https://www.freetogame.com/api/:splat"
+status = 200
+force = true
