@@ -1,66 +1,99 @@
-import { useState, useEffect } from "react";
-import { useGameContext } from "../context/GameContext"; // Import context
-import GameCard from "../components/GameCard"; // Import GameCard component
+import { useState, useEffect, useRef } from "react";
+import { useGameContext } from "../context/GameContext";
+import GameCard from "../components/GameCard";
+import { FiClock, FiX } from "react-icons/fi";
 
 function Games() {
-  const { state } = useGameContext(); // Access global state from context
+  const { state } = useGameContext();
 
-  // Search and Filter state
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("all");
 
-  // Pagination state
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
-  const gamesPerPage = 12; // Number of games per page
+  const gamesPerPage = 12;
 
-  // Reset to page 1 on search or genre change
+  const searchRef = useRef(null);
+  const gridRef = useRef(null); // 👈 GRID REF
+
+  /* =====================
+     LOAD HISTORY
+  ===================== */
   useEffect(() => {
-    setCurrentPage(1);
-  }, [search, genre]);
+    const saved = JSON.parse(localStorage.getItem("searchHistory")) || [];
+    setSearchHistory(saved);
+  }, []);
 
-  // Filter games berdasarkan search + genre
+  /* =====================
+     SAVE HISTORY
+  ===================== */
+  useEffect(() => {
+    if (!search.trim()) return;
+
+    const updated = [
+      search,
+      ...searchHistory.filter((item) => item !== search),
+    ].slice(0, 5);
+
+    setSearchHistory(updated);
+    localStorage.setItem("searchHistory", JSON.stringify(updated));
+  }, [search]);
+
+  /* =====================
+     REMOVE SINGLE HISTORY
+  ===================== */
+  const removeHistory = (item) => {
+    const updated = searchHistory.filter((h) => h !== item);
+    setSearchHistory(updated);
+    localStorage.setItem("searchHistory", JSON.stringify(updated));
+  };
+
+  /* =====================
+     FILTER + AUTOCOMPLETE
+  ===================== */
+  const filteredHistory = searchHistory.filter((item) =>
+    item.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => setCurrentPage(1), [search, genre]);
+
   const filteredGames = state.games.filter((game) => {
     const keyword = search.toLowerCase();
-    // Check if game matches search keyword
     const matchSearch =
       game.title.toLowerCase().includes(keyword) ||
-      game.genre.toLowerCase().includes(keyword); // Search in title and genre
+      game.genre.toLowerCase().includes(keyword);
 
-    // Check if game matches selected genre
     const matchGenre =
       genre === "all" || game.genre.toLowerCase() === genre;
-    
-    return matchSearch && matchGenre; // Return true if both match
+
+    return matchSearch && matchGenre;
   });
 
-  // Pagination logic
   const indexOfLastGame = currentPage * gamesPerPage;
   const indexOfFirstGame = indexOfLastGame - gamesPerPage;
-  // Get current page games
   const currentGames = filteredGames.slice(
     indexOfFirstGame,
     indexOfLastGame
   );
-  // Calculate total pages 
   const totalPages = Math.ceil(filteredGames.length / gamesPerPage);
 
-  // Loading state
+  /* =====================
+     LOADING / ERROR
+  ===================== */
   if (state.loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-white">
-        <span className="loading loading-spinner loading-lg mb-4"></span>
-        <p className="text-gray-300">Loading game collection...</p>
+      <div className="min-h-screen flex justify-center items-center text-white">
+        <span className="loading loading-spinner loading-lg"></span>
       </div>
     );
   }
 
-  // Error state
   if (state.error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="alert alert-error max-w-md">
-          <p>Failed to load games. Please refresh the page.</p>
-        </div>
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="alert alert-error">Failed to load games</div>
       </div>
     );
   }
@@ -78,40 +111,64 @@ function Games() {
         </div>
 
         {/* Search & Filter */}
-        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl mb-12 border border-white/10">
+        <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 relative z-20">
           <div className="flex flex-col md:flex-row gap-4">
 
-            {/* Search */}
+            {/* SEARCH */}
             <div className="relative flex-1">
-              <svg
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-
               <input
+                ref={searchRef}
                 type="text"
                 placeholder="Search games by title or genre..."
-                className="input input-bordered w-full pl-12 h-14 bg-black/40 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="input input-bordered w-full h-14 bg-black/50 text-white"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)} // Update search state
+                onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setShowHistory(true)}
+                onBlur={() => setTimeout(() => setShowHistory(false), 150)}
               />
+
+              {/* HISTORY DROPDOWN */}
+              {showHistory && filteredHistory.length > 0 && (
+                <div className="absolute top-full left-0 w-full mt-2 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50">
+                  {filteredHistory.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between px-4 py-3 text-sm hover:bg-white/10"
+                    >
+                      <button
+                        type="button"
+                        onMouseDown={() => {
+                          setSearch(item);
+                          setShowHistory(false);
+                        }}
+                        className="flex items-center gap-3 flex-1 text-left"
+                      >
+                        <FiClock className="text-white/50" />
+                        {item}
+                      </button>
+
+                      <button
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeHistory(item);
+                        }}
+                        className="text-white/40 hover:text-red-400"
+                      >
+                        <FiX />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Filter Genre */}
+            {/* FILTER */}
             <select
               value={genre}
-              onChange={(e) => setGenre(e.target.value)} // Update genre state
-              className="select select-bordered h-14 bg-black/40 text-white w-full md:w-56"
+              onChange={(e) => setGenre(e.target.value)}
+              className="select select-bordered h-14 bg-black/50 text-white w-full md:w-56"
             >
               <option value="all">All Genres</option>
               <option value="shooter">Shooter</option>
@@ -119,53 +176,56 @@ function Games() {
               <option value="rpg">RPG</option>
               <option value="strategy">Strategy</option>
             </select>
-
           </div>
         </div>
 
-        {/* Game Grid */}
-        {currentGames.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">😕</div>
-            <h3 className="text-2xl font-semibold mb-2">No games found</h3>
-            <p className="text-gray-400">
-              Try a different keyword or genre
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {currentGames.map((game) => ( // Render current page games
-                <GameCard key={game.id} game={game} /> // GameCard component
-              ))}
-            </div>
+        {/* GAME GRID */}
+        <div
+          ref={gridRef}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-12"
+        >
+          {currentGames.map((game) => (
+            <GameCard key={game.id} game={game} />
+          ))}
+        </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-12">
-                <div className="join">
-              {/* Prev */}
+        {/* PAGINATION */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-12">
+            <div className="join">
               <button
+                type="button"
                 className="join-item btn"
-                disabled={currentPage === 1} // Disable if on first page
-                onClick={() => setCurrentPage(p => p - 1)} // Go to previous page
-                > «
+                disabled={currentPage === 1}
+                onClick={() => {
+                  setCurrentPage((p) => p - 1);
+                  gridRef.current?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                «
               </button>
-             {/* Info Page */}
-             <button className="join-item btn btn-disabled">
+
+              <button
+                type="button"
+                className="join-item btn btn-disabled"
+              >
                 Page {currentPage} of {totalPages}
               </button>
-             {/* Next */}
-              <button className="join-item btn"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(p => p + 1)}
-              > »
+
+              <button
+                type="button"
+                className="join-item btn"
+                disabled={currentPage === totalPages}
+                onClick={() => {
+                  setCurrentPage((p) => p + 1);
+                  gridRef.current?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                »
               </button>
             </div>
           </div>
-          )}
-        </>
-         )}
+        )}
       </div>
     </div>
   );

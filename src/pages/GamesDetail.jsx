@@ -16,7 +16,7 @@ function GamesDetail() {
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        const response = await fetch(`/api/game?id=${id}`); // Fetch game by ID
+        const response = await fetch(`/api/api/game?id=${id}`); // Fetch game by ID
         const data = await response.json(); 
         setGame(data);
       } catch (error) { // Handle fetch error

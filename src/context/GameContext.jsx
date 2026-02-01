@@ -47,7 +47,7 @@ export const GameProvider = ({ children }) => {
 
     try {
       // Fetch games from API
-      const response = await fetch("/api/games");
+      const response = await fetch("/api/api/games");
       // Check if response is ok
       if (!response.ok) {
         throw new Error("Failed to fetch game data");
