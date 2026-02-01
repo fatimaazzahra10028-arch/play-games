@@ -1,5 +1,12 @@
+# ✅ API redirect (HARUS DI ATAS)
 [[redirects]]
 from = "/api/api/*"
 to = "https://www.freetogame.com/api/:splat"
 status = 200
 force = true
+
+# ✅ SPA fallback (DI BAWAH)
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
